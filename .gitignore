@@ -1,0 +1,16 @@
+node_modules/
+dist/
+target/
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
+.DS_Store
+Thumbs.db
+*.log
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/frameworks/

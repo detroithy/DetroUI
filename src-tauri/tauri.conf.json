@@ -1,0 +1,90 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/refs/heads/v2/core/tauri-config-schema/schema.json",
+  "productName": "detbar",
+  "version": "1.0.0",
+  "identifier": "com.detbar.app",
+  "build": {
+    "frontendDist": "../src",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "taskbar",
+        "title": "detbar",
+        "url": "taskbar/index.html",
+        "width": 700,
+        "height": 48,
+        "x": 610,
+        "y": 1032,
+        "visible": true,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "skipTaskbar": true,
+        "alwaysOnTop": true,
+        "shadow": false
+      },
+      {
+        "label": "settings",
+        "title": "Ayarlar",
+        "url": "settings/index.html",
+        "width": 900,
+        "height": 600,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "center": true
+      },
+      {
+        "label": "launcher",
+        "title": "Uygulama Başlatıcı",
+        "url": "launcher/index.html",
+        "width": 600,
+        "height": 450,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "center": true
+      },
+      {
+        "label": "desktop",
+        "title": "detbar Desktop",
+        "url": "desktop/index.html",
+        "width": 800,
+        "height": 600,
+        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "skipTaskbar": true
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": false,
+      "tooltip": "detbar"
+    },
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: file: asset: https://asset.localhost http:; connect-src 'self' https://api.open-meteo.com http://127.0.0.1; media-src 'self' file: asset: https://asset.localhost http://127.0.0.1 http:; font-src 'self' data:",
+      "assetProtocol": {
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
+  }
+}

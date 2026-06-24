@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>detbar</title>
+  <script>
+    // Tauri API'yi yükle
+    window.__TAURI__ = window.__TAURI__ || {};
+    window.__TAURI__.core = window.__TAURI__.core || { invoke: async () => {} };
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script src="tauri-bridge.js"></script>
+  <script>
+    // Ana uygulama başlatma
+    document.getElementById('app').innerHTML = '<p style="color:#fff;padding:20px;">detbar Tauri version loading...</p>';
+  </script>
+</body>
+</html>

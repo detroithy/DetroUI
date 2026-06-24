@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uygulama Başlatıcı</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg,#18181c);font-family:'Segoe UI',sans-serif;overflow:hidden;color:var(--text,#fff);height:100vh}
+.launcher{display:flex;flex-direction:column;height:100vh;padding:16px;position:relative}
+.search-container{display:flex;align-items:center;background:var(--bg-card,#1e1e23);border-radius:12px;padding:8px 14px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.06)}
+.search-icon{color:var(--text-dim,rgba(255,255,255,0.6));margin-right:10px;flex-shrink:0}
+.search-container input{flex:1;background:transparent;border:none;outline:none;color:var(--text,#fff);font-size:14px}
+.search-container input::placeholder{color:var(--text-dim,rgba(255,255,255,0.4))}
+.categories{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.category-btn{padding:6px 14px;border-radius:16px;border:none;background:rgba(255,255,255,0.06);color:var(--text-dim,rgba(255,255,255,0.6));cursor:pointer;font-size:12px;transition:all .2s}
+.category-btn:hover{background:rgba(255,255,255,0.1);color:var(--text,#fff)}
+.category-btn.active{background:var(--accent,#00d4ff);color:#000;font-weight:600}
+.apps-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;padding:4px 0}
+.app-item{background:var(--bg-card,#1e1e23);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;border:1px solid transparent;position:relative}
+.app-item:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.1)}
+.app-item.dragging{opacity:.5}
+.app-icon{font-size:28px;margin-bottom:6px;text-align:center}
+.app-name{font-size:11px;color:var(--text,rgba(255,255,255,0.8));text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-publisher{font-size:9px;color:var(--text-dim,rgba(255,255,255,0.4));text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.power-menu{display:flex;gap:8px;justify-content:center;padding:10px 0 4px 0;border-top:1px solid rgba(255,255,255,0.06)}
+.power-btn{width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.power-btn:hover{transform:scale(1.1)}
+.power-btn.shutdown{background:rgba(255,77,77,0.2);color:#ff4d4d}
+.power-btn.shutdown:hover{background:rgba(255,77,77,0.4)}
+.power-btn.restart{background:rgba(255,165,0,0.2);color:#ffa500}
+.power-btn.restart:hover{background:rgba(255,165,0,0.4)}
+.power-btn.sleep{background:rgba(0,212,255,0.2);color:#00d4ff}
+.power-btn.sleep:hover{background:rgba(0,212,255,0.4)}
+.close-btn{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10}
+.close-btn:hover{background:rgba(255,77,77,0.3);color:#ff4d4d}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="launcher">
+<button class="close-btn" id="closeBtn" title="Kapat">✕</button>
+<div class="search-container">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="search-icon"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+<input type="text" id="searchInput" placeholder="Uygulama ara..." autofocus>
+</div>
+<div class="categories" id="categories"></div>
+<div class="apps-grid" id="appsGrid"></div>
+<div class="power-menu">
+<button class="power-btn shutdown" id="shutdownBtn" title="Kapat">⏻</button>
+<button class="power-btn restart" id="restartBtn" title="Yeniden Başlat">↻</button>
+<button class="power-btn sleep" id="sleepBtn" title="Uyku">⏾</button>
+</div>
+</div>
+<script src="../tauri-bridge.js"></script>
+<script>
+var allApps=[],currentCat='all';
+
+var catDefs=[
+{id:'all',label:'Tümü'},
+{id:'pinned',label:'Sabitlenen'},
+{id:'system',label:'Sistem'},
+{id:'internet',label:'İnternet'},
+{id:'office',label:'Ofis'},
+{id:'media',label:'Medya'}
+];
+
+var catKeywords={
+system:['Microsoft','Windows','System','Control','Panel','Registry','Task','Manager','Command','PowerShell','Terminal','Notepad','Calculator','Paint'],
+internet:['Edge','Chrome','Firefox','Opera','Brave','Browser','Internet','Network','Zoom','Teams','Discord','Skype'],
+office:['Office','Word','Excel','PowerPoint','OneNote','Outlook','Adobe','Reader','PDF'],
+media:['Media','Player','Music','Video','Photo','Camera','Spotify','VLC','Netflix','Steam']
+};
+
+var appIcons={
+'Microsoft Edge':'🌐','Google Chrome':'🌐','Mozilla Firefox':'🦊','Windows Terminal':'💻',
+'PowerShell':'💻','Command Prompt':'💻','Microsoft Word':'📝','Microsoft Excel':'📊',
+'Microsoft PowerPoint':'📈','Microsoft Outlook':'📧','Microsoft Teams':'💬','Spotify':'🎵',
+'VLC':'🎬','Steam':'🎮','Discord':'💬','Zoom':'📹','Visual Studio Code':'💻',
+'Notepad':'📝','Calculator':'🔢','Paint':'🎨','Photos':'📷','Settings':'⚙️',
+'File Explorer':'📁','Terminal':'💻','WordPad':'📝','Media Player':'🎬'
+};
+
+function getIcon(name){
+for(var k in appIcons)if(name.toLowerCase().includes(k.toLowerCase()))return appIcons[k];
+return'📱';
+}
+
+function renderCats(){
+var el=document.getElementById('categories');el.innerHTML='';
+catDefs.forEach(function(c){
+var b=document.createElement('button');
+b.className='category-btn'+(c.id===currentCat?' active':'');
+b.textContent=c.label;
+b.dataset.category=c.id;
+b.addEventListener('click',function(){currentCat=this.dataset.category;renderCats();renderApps()});
+el.appendChild(b);
+});
+}
+
+// Sistem komutlari
+var sysCmds = [
+{name:'cmd',icon:'💻',cmd:'cmd.exe'},{name:'Command Prompt',icon:'💻',cmd:'cmd.exe'},
+{name:'powershell',icon:'💻',cmd:'powershell.exe'},{name:'Windows PowerShell',icon:'💻',cmd:'powershell.exe'},
+{name:'terminal',icon:'💻',cmd:'wt.exe'},{name:'Windows Terminal',icon:'💻',cmd:'wt.exe'},
+{name:'notepad',icon:'📝',cmd:'notepad.exe'},{name:'Not Defteri',icon:'📝',cmd:'notepad.exe'},
+{name:'calculator',icon:'🔢',cmd:'calc.exe'},{name:'Hesap Makinesi',icon:'🔢',cmd:'calc.exe'},
+{name:'explorer',icon:'📁',cmd:'explorer.exe'},{name:'Dosya Gezgini',icon:'📁',cmd:'explorer.exe'},
+{name:'taskmgr',icon:'⚙️',cmd:'taskmgr.exe'},{name:'Görev Yöneticisi',icon:'⚙️',cmd:'taskmgr.exe'},
+{name:'regedit',icon:'⚙️',cmd:'regedit.exe'},{name:'Kayıt Defteri',icon:'⚙️',cmd:'regedit.exe'},
+{name:'control',icon:'⚙️',cmd:'control.exe'},{name:'Denetim Masası',icon:'⚙️',cmd:'control.exe'},
+{name:'settings',icon:'⚙️',cmd:'start ms-settings:'},{name:'Ayarlar',icon:'⚙️',cmd:'start ms-settings:'},
+{name:'chrome',icon:'🌐',cmd:'start chrome:'},{name:'edge',icon:'🌐',cmd:'start msedge:'},
+{name:'firefox',icon:'🦊',cmd:'start firefox:'},
+{name:'shutdown',icon:'⏻',cmd:'shutdown /s /t 0'},{name:'kapat',icon:'⏻',cmd:'shutdown /s /t 0'},
+{name:'restart',icon:'↻',cmd:'shutdown /r /t 0'},{name:'yeniden başlat',icon:'↻',cmd:'shutdown /r /t 0'},
+{name:'sleep',icon:'⏾',cmd:'rundll32.exe powrprof.dll,SetSuspendState 0,1,0'},{name:'uyku',icon:'⏾',cmd:'rundll32.exe powrprof.dll,SetSuspendState 0,1,0'},
+{name:'run',icon:'▶️',cmd:'start'},{name:'çalıştır',icon:'▶️',cmd:'start'}
+];
+
+function renderApps(){
+var grid=document.getElementById('appsGrid');grid.innerHTML='';
+var search=document.getElementById('searchInput').value.toLowerCase();
+var filtered=allApps.filter(function(a){
+if(currentCat==='pinned')return false;
+if(currentCat!=='all'){
+var kw=catKeywords[currentCat]||[];
+var match=kw.some(function(k){return a.name.toLowerCase().includes(k.toLowerCase())});
+if(!match)return false;
+}
+if(search&&!a.name.toLowerCase().includes(search)&&!(a.publisher&&a.publisher.toLowerCase().includes(search))&&!(a.path&&a.path.toLowerCase().includes(search)))return false;
+return true;
+});
+
+// If searching, add matching system commands
+if(search){
+sysCmds.forEach(function(cmd){
+if(cmd.name.toLowerCase().includes(search)||cmd.cmd.toLowerCase().includes(search)){
+filtered.push({name:cmd.name,path:cmd.cmd,publisher:'Sistem',_isCmd:true});
+}
+});
+}
+
+if(filtered.length===0){grid.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:40px;font-size:13px;grid-column:1/-1">Uygulama bulunamadı</div>';return}
+filtered.forEach(function(app){
+var div=document.createElement('div');div.className='app-item';
+var icon = app._isCmd ? (sysCmds.find(function(c){return c.name===app.name})||{}).icon||'⚙️' : getIcon(app.name);
+div.innerHTML='<div class="app-icon">'+icon+'</div><div class="app-name">'+app.name+'</div><div class="app-publisher">'+(app.publisher||'')+'</div>';
+div.addEventListener('click',function(){if(app.path)window.plasmaAPI.launchApp(app.path)});
+grid.appendChild(div);
+});
+}
+
+document.getElementById('searchInput').addEventListener('input',renderApps);
+document.getElementById('closeBtn').addEventListener('click',function(){window.plasmaAPI.closeLauncher()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')window.plasmaAPI.closeLauncher()});
+
+// Guc tuslari
+document.getElementById('shutdownBtn').addEventListener('click',function(){window.plasmaAPI.setStoreValue('powerAction','shutdown')});
+document.getElementById('restartBtn').addEventListener('click',function(){window.plasmaAPI.setStoreValue('powerAction','restart')});
+document.getElementById('sleepBtn').addEventListener('click',function(){window.plasmaAPI.setStoreValue('powerAction','sleep')});
+
+// Tema
+(async function(){
+try{
+var t=await window.plasmaAPI.getTheme()||'dark';
+var a=await window.plasmaAPI.getAccentColor()||'#00d4ff';
+var r=document.documentElement;
+if(a)r.style.setProperty('--accent',a);
+var themes={dark:{bg:'#18181c',card:'#1e1e23',text:'#fff',td:'rgba(255,255,255,0.6)'},light:{bg:'#e8e8e8',card:'#f5f5f5',text:'#1a1a1a',td:'#555'},catppuccin:{bg:'#181824',card:'#1e1e2e',text:'#cdd6f4',td:'#a6adc8'},nord:{bg:'#2e3440',card:'#3b4252',text:'#eceff4',td:'#d8dee9'},dracula:{bg:'#21222c',card:'#282a36',text:'#f8f8f2',td:'#6272a4'}};
+var tm=themes[t]||themes.dark;
+r.style.setProperty('--bg',tm.bg);r.style.setProperty('--bg-card',tm.card);r.style.setProperty('--text',tm.text);r.style.setProperty('--text-dim',tm.td);
+}catch(e){}
+})();
+
+renderCats();
+(async function(){try{allApps=await window.plasmaAPI.getInstalledApps();renderApps()}catch(e){}})();
+
+// TEMA POLLING
+setInterval(async function(){try{var t=await window.plasmaAPI.getTheme()||'dark';var a=await window.plasmaAPI.getAccentColor()||'#00d4ff';var r=document.documentElement;if(a)r.style.setProperty('--accent',a);var themes={dark:{bg:'#18181c',card:'#1e1e23',text:'#fff',td:'rgba(255,255,255,0.6)'},light:{bg:'#e8e8e8',card:'#f5f5f5',text:'#1a1a1a',td:'#555'},catppuccin:{bg:'#181824',card:'#1e1e2e',text:'#cdd6f4',td:'#a6adc8'},nord:{bg:'#2e3440',card:'#3b4252',text:'#eceff4',td:'#d8dee9'},dracula:{bg:'#21222c',card:'#282a36',text:'#f8f8f2',td:'#6272a4'}};var tm=themes[t]||themes.dark;r.style.setProperty('--bg',tm.bg);r.style.setProperty('--bg-card',tm.card);r.style.setProperty('--text',tm.text);r.style.setProperty('--text-dim',tm.td);var o=parseFloat(await window.plasmaAPI.getStoreValue('opacity'))||88;document.body.style.opacity=o/100;}catch(e){}},2000);
+
+// Ruzgar guc komutlarini Rust tarafinda isle
+// sleep/shutdown/restart icin polling
+setInterval(async function(){
+try{
+var action=await window.plasmaAPI.getStoreValue('powerAction');
+if(action==='shutdown'){window.plasmaAPI.setStoreValue('powerAction','');window.__TAURI_INTERNALS__.invoke('launchApp',{path:'shutdown /s /t 0'})}
+if(action==='restart'){window.plasmaAPI.setStoreValue('powerAction','');window.__TAURI_INTERNALS__.invoke('launchApp',{path:'shutdown /r /t 0'})}
+if(action==='sleep'){window.plasmaAPI.setStoreValue('powerAction','');window.__TAURI_INTERNALS__.invoke('launchApp',{path:'rundll32.exe powrprof.dll,SetSuspendState 0,1,0'})}
+}catch(e){}
+},500);
+</script>
+</body>
+</html>

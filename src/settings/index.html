@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayarlar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="settings">
+    <div class="settings-header">
+      <h1>Ayarlar</h1>
+      <button class="close-btn" id="closeBtn">&times;</button>
+    </div>
+
+    <div class="settings-content">
+      <!-- Sol Menü -->
+      <div class="settings-menu">
+        <button class="menu-item active" data-section="appearance">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5 0 0112 22zm0-18c-4.41 0-8 3.59-8 8s3.59 8 8 8c.28 0 .5-.22.5-.5 0-.16-.08-.28-.14-.35-.41-.46-.63-1.05-.63-1.65a2.5 2.5 0 012.5-2.5H16c2.21 0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/>
+            <circle cx="6.5" cy="11.5" r="2.5"/>
+            <circle cx="9.5" cy="7.5" r="2.5"/>
+            <circle cx="14.5" cy="7.5" r="2.5"/>
+            <circle cx="17.5" cy="11.5" r="2.5"/>
+          </svg>
+          Görünüm
+        </button>
+        <button class="menu-item" data-section="widgets">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+          </svg>
+          Widget'lar
+        </button>
+        <button class="menu-item" data-section="taskbar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2z"/>
+          </svg>
+          Görev Çubuğu
+        </button>
+        <button class="menu-item" data-section="shortcuts">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+          </svg>
+          Kısayollar
+        </button>
+        <button class="menu-item" data-section="weather">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/>
+          </svg>
+          Hava Durumu
+        </button>
+        <button class="menu-item" data-section="wallpaper">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+          </svg>
+          Wallpaper
+        </button>
+      </div>
+
+      <!-- Sağ İçerik -->
+      <div class="settings-panel">
+        <!-- Görünüm Bölümü -->
+        <div class="panel-section active" id="appearance">
+          <h2>Görünüm Ayarları</h2>
+
+          <div class="setting-group">
+            <label class="setting-label">Tema</label>
+            <div class="theme-options">
+              <button class="theme-btn active" data-theme="dark">
+                <div class="theme-preview dark"></div>
+                <span>Koyu</span>
+              </button>
+              <button class="theme-btn" data-theme="light">
+                <div class="theme-preview light"></div>
+                <span>Açık</span>
+              </button>
+              <button class="theme-btn" data-theme="catppuccin">
+                <div class="theme-preview catppuccin"></div>
+                <span>Catppuccin</span>
+              </button>
+              <button class="theme-btn" data-theme="nord">
+                <div class="theme-preview nord"></div>
+                <span>Nord</span>
+              </button>
+              <button class="theme-btn" data-theme="dracula">
+                <div class="theme-preview dracula"></div>
+                <span>Dracula</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Vurgu Rengi</label>
+            <div class="color-options">
+              <button class="color-btn active" data-color="#00d4ff" style="background: #00d4ff;"></button>
+              <button class="color-btn" data-color="#ff6b6b" style="background: #ff6b6b;"></button>
+              <button class="color-btn" data-color="#4ecdc4" style="background: #4ecdc4;"></button>
+              <button class="color-btn" data-color="#a855f7" style="background: #a855f7;"></button>
+              <button class="color-btn" data-color="#f59e0b" style="background: #f59e0b;"></button>
+              <button class="color-btn" data-color="#22c55e" style="background: #22c55e;"></button>
+              <button class="color-btn" data-color="#ec4899" style="background: #ec4899;"></button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Opaklık</label>
+            <div class="slider-container">
+              <input type="range" min="50" max="100" value="88" class="slider" id="opacitySlider">
+              <span class="slider-value" id="opacityValue">88%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Widget'lar Bölümü -->
+        <div class="panel-section" id="widgets">
+          <h2>Widget Ayarları</h2>
+
+          <div class="widget-toggles">
+            <div class="widget-toggle-item">
+              <div class="widget-info">
+                <span class="widget-name">Saat & Takvim</span>
+                <span class="widget-desc">Analog ve dijital saat, takvim görünümü</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked data-widget="clock">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="widget-toggle-item">
+              <div class="widget-info">
+                <span class="widget-name">Sistem Monitörü</span>
+                <span class="widget-desc">CPU, RAM, disk ve ağ kullanımı</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" checked data-widget="system-monitor">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="widget-toggle-item">
+              <div class="widget-info">
+                <span class="widget-name">Hava Durumu</span>
+                <span class="widget-desc">Mevcut hava durumu ve tahmin</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" data-widget="weather">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="widget-toggle-item">
+              <div class="widget-info">
+                <span class="widget-name">Notlar</span>
+                <span class="widget-desc">Hızlı not alma ve düzenleme</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" data-widget="notes">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="widget-toggle-item">
+              <div class="widget-info">
+                <span class="widget-name">Müzik Player</span>
+                <span class="widget-desc">Müzik kontrolü ve şimdi çalıyor</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" data-widget="music-player">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Görev Çubuğu Bölümü -->
+        <div class="panel-section" id="taskbar">
+          <h2>Görev Çubuğu Ayarları</h2>
+
+          <div class="setting-group">
+            <label class="setting-label">Konum</label>
+            <div class="position-options">
+              <button class="position-btn" data-position="top">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Üst
+              </button>
+              <button class="position-btn active" data-position="bottom">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Alt
+              </button>
+              <button class="position-btn" data-position="left">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Sol
+              </button>
+              <button class="position-btn" data-position="right">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                </svg>
+                Sağ
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Yükseklik</label>
+            <div class="slider-container">
+              <input type="range" min="32" max="64" value="48" class="slider" id="taskbarHeight">
+              <span class="slider-value" id="taskbarHeightValue">48px</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kısayollar Bölümü -->
+        <div class="panel-section" id="shortcuts">
+          <h2>Klavye Kısayolları</h2>
+
+          <div class="shortcut-list">
+            <div class="shortcut-item">
+              <span class="shortcut-action">Uygulama Başlatıcı</span>
+              <span class="shortcut-key">Ctrl + Alt + Space</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-action">Ayarlar</span>
+              <span class="shortcut-key">Ctrl + Alt + T</span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-action">Widget'ları Aç/Kapat</span>
+              <span class="shortcut-key">Ctrl + Alt + W</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hava Durumu Bölümü -->
+        <div class="panel-section" id="weather">
+          <h2>Hava Durumu Ayarları</h2>
+
+          <div class="setting-group">
+            <label class="setting-label">Şehir</label>
+            <select class="select-input" id="weatherCity">
+              <option value="istanbul">İstanbul</option>
+              <option value="ankara">Ankara</option>
+              <option value="izmir">İzmir</option>
+              <option value="london">Londra</option>
+              <option value="new york">New York</option>
+              <option value="berlin">Berlin</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Wallpaper Bölümü -->
+        <div class="panel-section" id="wallpaper">
+          <h2>Animasyonlu Wallpaper</h2>
+
+          <div class="setting-group">
+            <label class="setting-label">Video Dosyası</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn-primary" id="pickWallpaperBtn">Video Seç</button>
+              <button class="btn-secondary" id="stopWallpaperBtn">Kaldır</button>
+            </div>
+            <div id="wallpaperPath" style="font-size:12px;color:var(--text-dim);margin-top:8px;word-break:break-all;"></div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Ses</label>
+            <div class="slider-container">
+              <input type="range" min="0" max="100" value="0" class="slider" id="wallpaperVolume">
+              <span class="slider-value" id="wallpaperVolumeValue">0%</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Oynatma</label>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-secondary" id="wallpaperPlayBtn">▶ Oynat</button>
+              <button class="btn-secondary" id="wallpaperPauseBtn">⏸ Duraklat</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../tauri-bridge.js"></script>
+  <script src="renderer.js"></script>
+  <script>
+    document.addEventListener('keydown', function(e) { if (e.key === 'F12') try { window.__TAURI_INTERNALS__?.openDevTools?.(); } catch(ex) {} });
+  </script>
+</body>
+</html>

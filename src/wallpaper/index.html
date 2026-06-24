@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#000;margin:0;padding:0}
+#video{width:100vw;height:100vh;object-fit:cover;position:fixed;top:0;left:0}
+#debug{position:fixed;top:8px;left:8px;color:#0f0;font-size:10px;z-index:99999;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-family:monospace;pointer-events:none;display:none}
+</style>
+</head>
+<body>
+<video id="video" muted loop playsinline></video>
+<div id="debug"></div>
+<script src="../tauri-bridge.js"></script>
+<script>
+var v=document.getElementById('video');
+var dbg=document.getElementById('debug');
+var currentPath='';
+var currentPort=0;
+var lastVol=-1;
+var lastPlay=null;
+
+function log(msg){
+  dbg.textContent=msg;
+  dbg.style.display='block';
+  console.log('[wallpaper] '+msg);
+}
+
+async function startServer(path){
+  try{
+    log('Sunucu baslatiliyor: '+path.split('\\').pop());
+    var port=await window.plasmaAPI.startVideoServer(path);
+    currentPort=port;
+    log('Sunucu baslatildi, port: '+port);
+    return port;
+  }catch(e){
+    log('Sunucu HATASI: '+e);
+    return null;
+  }
+}
+
+async function loadVideo(path,port){
+  try{
+    var url='http://127.0.0.1:'+port+'/video';
+    log('Video yukleniyor: '+url);
+    v.src=url;
+    v.load();
+  }catch(e){
+    log('Video yukleme HATASI: '+e);
+  }
+}
+
+// Ana dongu - her 500ms'de kontrol et
+setInterval(async function(){
+  try{
+    // Wallpaper yolu
+    var p=await window.plasmaAPI.getStoreValue('wallpaperPath');
+    
+    // Yol degistiyse yeni sunucu baslat
+    if(p && p!==currentPath){
+      currentPath=p;
+      log('Yeni video: '+p.split('\\').pop());
+      var port=await startServer(p);
+      if(port){
+        await loadVideo(p,port);
+      }
+    }
+    
+    // Ses
+    var vol=parseFloat(await window.plasmaAPI.getStoreValue('wallpaperVolume'))||0;
+    if(vol!==lastVol){
+      lastVol=vol;
+      v.volume=vol;
+      v.muted=(vol===0);
+      log('Ses: %'+Math.round(vol*100));
+    }
+    
+    // Oynat/Duraklat
+    var pl=await window.plasmaAPI.getStoreValue('wallpaperPlayPause');
+    if(pl!==lastPlay){
+      lastPlay=pl;
+      if(pl){
+        v.play().then(function(){log('Oynatiliyor')}).catch(function(e){
+          log('Oynatma hatasi, muted deneniyor...');
+          v.muted=true;
+          v.play().then(function(){log('Oynatiliyor (muted)')}).catch(function(e2){log('Oynatma tamamen basarisiz: '+e2)});
+        });
+      }else{
+        v.pause();
+        log('Duraklatildi');
+      }
+    }
+  }catch(e){
+    log('Polling hatasi: '+e);
+  }
+},500);
+
+// Video hazir olunca oynat
+v.addEventListener('canplay',function(){
+  log('Video hazir, oynatiliyor...');
+  v.play().then(function(){log('Otomatik oynatma basarili')}).catch(function(e){
+    log('Otomatik oynatma engellendi, muted deneniyor');
+    v.muted=true;
+    v.play().catch(function(){});
+  });
+});
+
+v.addEventListener('error',function(e){
+  log('Video hatasi: '+(v.error?v.error.message:'bilinmeyen'));
+});
+
+log('Wallpaper hazir, video bekleniyor...');
+</script>
+</body>
+</html>

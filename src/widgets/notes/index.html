@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Notlar</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1e1e23;font-family:-apple-system,'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;align-items:center;justify-content:center}
+.widget{background:#252529;border-radius:16px;border:1px solid rgba(255,255,255,0.06);padding:16px;width:calc(100% - 4px);height:calc(100% - 4px);display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.header{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.drag-btn{width:28px;height:28px;border:none;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);border-radius:8px;cursor:grab;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.drag-btn:hover{background:rgba(0,212,255,0.15);color:#00d4ff}
+.title{flex:1;font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;text-align:center}
+.close-btn{width:28px;height:28px;border:none;background:rgba(255,77,77,0.1);color:rgba(255,77,77,0.5);border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.close-btn:hover{background:rgba(255,77,77,0.3);color:#ff4d4d}
+.input-row{display:flex;gap:6px}
+.input-row input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;outline:none;transition:border .2s}
+.input-row input:focus{border-color:rgba(0,212,255,0.3)}
+.input-row button{width:38px;height:38px;border:none;background:rgba(0,212,255,0.15);color:#00d4ff;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.input-row button:hover{background:rgba(0,212,255,0.3)}
+.list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:2px 0}
+.note-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);border-radius:10px;padding:8px 10px;transition:all .15s}
+.note-item:hover{background:rgba(255,255,255,0.06)}
+.note-text{flex:1;font-size:12px;color:rgba(255,255,255,0.7);line-height:1.4}
+.note-del{width:24px;height:24px;border:none;background:rgba(255,77,77,0.1);color:rgba(255,77,77,0.5);border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.note-del:hover{background:rgba(255,77,77,0.3);color:#ff4d4d}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="widget" id="widget">
+<div class="header">
+<div class="drag-btn" id="dragBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="pointer-events:none"><circle cx="8" cy="5" r="1.5"/><circle cx="16" cy="5" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="19" r="1.5"/><circle cx="16" cy="19" r="1.5"/></svg></div>
+<div class="title">Notlar</div>
+<button class="close-btn" id="closeBtn">&#10005;</button>
+</div>
+<div class="input-row">
+<input id="noteInput" placeholder="Not ekle..." autocomplete="off">
+<button id="addBtn">+</button>
+</div>
+<div class="list" id="noteList"></div>
+</div>
+<script src="../../tauri-bridge.js"></script>
+<script>
+(function(){var b=document.getElementById('dragBtn');if(!b)return;var d=false,sx=0,sy=0,ox=NaN,oy=NaN;b.addEventListener('mousedown',function(e){e.preventDefault();d=true;sx=e.screenX;sy=e.screenY;ox=NaN;b.classList.add('active');window.plasmaAPI.getWindowPosition().then(function(p){ox=p.x-sx;oy=p.y-sy}).catch(function(){})});document.addEventListener('mousemove',function(e){if(!d||isNaN(ox))return;window.plasmaAPI.moveWindow(e.screenX+ox,e.screenY+oy)});document.addEventListener('mouseup',function(){if(!d)return;d=false;b.classList.remove('active')})})();
+document.getElementById('closeBtn').addEventListener('click',function(){window.plasmaAPI.closeWidget('notes')});
+(function(){var c=document.createElement('div');c.style.cssText='position:fixed;right:0;bottom:0;width:10px;height:10px;cursor:nwse-resize;z-index:999';document.body.appendChild(c);var r=document.createElement('div');r.style.cssText='position:fixed;right:0;top:0;width:5px;height:100%;cursor:ew-resize;z-index:999';document.body.appendChild(r);var b2=document.createElement('div');b2.style.cssText='position:fixed;bottom:0;left:0;width:100%;height:5px;cursor:ns-resize;z-index:999';document.body.appendChild(b2);var rs=false,rsx=0,rsy=0,row=0,roh=0,rt='none';c.addEventListener('mousedown',function(e){rs=true;rsx=e.screenX;rsy=e.screenY;row=window.innerWidth;roh=window.innerHeight;rt='corner';e.preventDefault()});r.addEventListener('mousedown',function(e){rs=true;rsx=e.screenX;rsy=e.screenY;row=window.innerWidth;roh=window.innerHeight;rt='right';e.preventDefault()});b2.addEventListener('mousedown',function(e){rs=true;rsx=e.screenX;rsy=e.screenY;row=window.innerWidth;roh=window.innerHeight;rt='bottom';e.preventDefault()});document.addEventListener('mousemove',function(e){if(!rs)return;var dx=e.screenX-rsx,dy=e.screenY-rsy;window.plasmaAPI.setWindowSize('widget-notes',rt==='corner'||rt==='right'?Math.max(200,row+dx):row,rt==='corner'||rt==='bottom'?Math.max(150,roh+dy):roh)});document.addEventListener('mouseup',function(){rs=false})})();
+
+async function load(){
+try{
+var notes=await window.plasmaAPI.getNotes();
+var list=document.getElementById('noteList');list.innerHTML='';
+if(Array.isArray(notes))notes.forEach(function(t,i){
+var d=document.createElement('div');d.className='note-item';
+d.innerHTML='<span class="note-text">'+escHtml(t)+'</span><button class="note-del" data-i="'+i+'">✕</button>';
+d.querySelector('.note-del').addEventListener('click',async function(){
+var arr=Array.isArray(notes)?notes:[];arr.splice(parseInt(this.dataset.i),1);await window.plasmaAPI.saveNotes(arr);load();
+});
+list.appendChild(d);
+});
+}catch(e){}
+}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+load();
+document.getElementById('addBtn').addEventListener('click',async function(){
+var inp=document.getElementById('noteInput');var txt=inp.value.trim();if(!txt)return;
+try{
+var existing=await window.plasmaAPI.getNotes();
+var arr=Array.isArray(existing)?existing:[];arr.push(txt);await window.plasmaAPI.saveNotes(arr);inp.value='';load();
+}catch(e){}
+});
+document.getElementById('noteInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('addBtn').click()});
+
+setInterval(async function(){try{var t=await window.plasmaAPI.getTheme()||'dark';var a=await window.plasmaAPI.getAccentColor()||'#00d4ff';var o=parseFloat(await window.plasmaAPI.getStoreValue('opacity'))||88;var bg={dark:'#1e1e23',light:'#e8e8e8',catppuccin:'#1e1e2e',nord:'#2e3440',dracula:'#282a36'};var wbg={dark:'#252529',light:'#f5f5f5',catppuccin:'#252536',nord:'#3b4252',dracula:'#343746'};document.body.style.background=bg[t]||bg.dark;var w=document.querySelector('.widget');if(w)w.style.background=wbg[t]||wbg.dark;document.body.style.opacity=o/100}catch(e){}},2000);
+</script>
+</body>
+</html>

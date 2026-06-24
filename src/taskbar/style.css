@@ -1,0 +1,71 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1e1e23;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+.taskbar {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 12px;
+  background: var(--bg-card, #1e1e23);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  margin: 4px;
+  height: calc(100% - 8px);
+}
+.taskbar-bottom { border-radius: 24px; }
+.taskbar-top    { border-radius: 24px; }
+.taskbar-left   { border-radius: 24px; flex-direction: column; padding: 12px 0; }
+.taskbar-right  { border-radius: 24px; flex-direction: column; padding: 12px 0; }
+
+.search-bar {
+  display: flex; align-items: center; height: 32px; padding: 0 12px; margin: 0 6px;
+  background: rgba(255,255,255,0.08); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); min-width: 160px;
+}
+.search-icon { color: #888; margin-right: 8px; flex-shrink: 0; }
+.search-bar input { background: transparent; border: none; outline: none; color: var(--text, #fff); font-size: 13px; width: 100%; }
+.search-bar input::placeholder { color: #666; }
+
+.pinned-apps { display: flex; align-items: center; gap: 4px; margin: 0 6px; }
+.app-button {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; cursor: pointer; transition: all 0.2s; color: var(--text-dim, #b0b0b0);
+}
+.app-button:hover { background: rgba(255,255,255,0.1); color: var(--text, #fff); }
+.app-button.active { color: var(--accent, #00d4ff); }
+
+.running-apps { display: flex; align-items: center; gap: 4px; flex: 1; padding: 0 6px; }
+
+.widget-buttons { display: flex; align-items: center; gap: 2px; margin: 0 6px; }
+.widget-toggle {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #888;
+}
+.widget-toggle:hover { background: rgba(255,255,255,0.1); color: var(--text, #fff); }
+.widget-toggle.active { background: rgba(0,212,255,0.2); color: var(--accent, #00d4ff); animation: pulse 2s infinite; }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.system-tray { display: flex; align-items: center; gap: 10px; margin-left: auto; padding: 0 10px; height: 100%; }
+.tray-icons { display: flex; align-items: center; gap: 6px; }
+.tray-icon {
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-dim, #b0b0b0); border-radius: 6px;
+}
+.tray-icon:hover { color: var(--text, #fff); background: rgba(255,255,255,0.1); }
+.clock { color: var(--text, #e0e0e0); font-size: 12px; font-weight: 500; white-space: nowrap; min-width: 120px; }
+
+.settings-button {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; cursor: pointer; transition: all 0.2s; color: #888; margin-left: 6px;
+}
+.settings-button:hover { background: rgba(255,255,255,0.1); color: var(--text, #fff); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }

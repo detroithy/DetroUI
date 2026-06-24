@@ -1,0 +1,26 @@
+{
+  "name": "detbar",
+  "version": "1.0.0",
+  "description": "KDE Plasma & Hyprland style desktop environment for Windows 10",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.3",
+    "electron-store": "^8.1.0",
+    "koffi": "^3.0.2",
+    "openmeteo": "^1.1.0",
+    "systeminformation": "^5.21.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}

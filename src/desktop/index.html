@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8"><title>Masaüstü</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;font-family:'Segoe UI',sans-serif;overflow:hidden;width:100vw;height:100vh;user-select:none}
+#desk{width:100vw;height:100vh;position:relative}
+.s{position:absolute;width:72px;text-align:center;cursor:pointer;padding:8px;border-radius:12px;transition:all .15s}
+.s:hover{background:rgba(255,255,255,0.08)}
+.si{font-size:32px;line-height:1.2;margin-bottom:4px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5))}
+.sn{font-size:11px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+#ctx{position:fixed;background:rgba(25,25,30,0.97);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:4px;min-width:180px;z-index:99999;box-shadow:0 8px 40px rgba(0,0,0,0.6);display:none;font-size:13px}
+.cx{padding:7px 12px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px;transition:all .1s}
+.cx:hover{background:rgba(255,255,255,0.06);color:#fff}
+.cic{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.cd{height:1px;background:rgba(255,255,255,0.04);margin:4px 8px}
+#sw{position:fixed;bottom:16px;right:16px;display:flex;gap:4px;padding:4px 10px;background:rgba(15,15,20,0.8);backdrop-filter:blur(12px);border-radius:16px;border:1px solid rgba(255,255,255,0.04);z-index:9999}
+.p{padding:4px 10px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,0.35);cursor:pointer;font-size:11px;transition:all .2s}
+.p:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.pn{color:#00d4ff;background:rgba(0,212,255,0.1)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="desk"></div><div id="ctx"></div><div id="sw"></div>
+<script src="../tauri-bridge.js"></script>
+<script>
+var SC=[],DI=0,DS=[];
+// Sag tik
+document.addEventListener('mousedown',function(e){
+if(e.button!==2)return;e.preventDefault();e.stopPropagation();
+var t=e.target;
+while(t&&t!==document.body){if(t.closest&&t.closest('#ctx,.cx,#sw,.p'))return;if(t.classList&&t.classList.contains('s')){ctx(e.clientX,e.clientY,parseInt(t.dataset.i));return}t=t.parentNode}
+ctx(e.clientX,e.clientY,-1);
+});
+document.addEventListener('contextmenu',function(e){e.preventDefault();return false},true);
+
+// Test elementi
+var T=document.createElement('div');T.style.cssText='position:fixed;top:4px;right:4px;color:#0f0;font-size:10px;z-index:99999;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px';T.textContent='OK';document.body.appendChild(T);
+
+// Tek click handler - tum menu icin
+document.getElementById('ctx').addEventListener('click',function(e){
+  var t=e.target.closest('.cx');if(!t)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  document.getElementById('ctx').style.display='none';
+  var a=t.dataset.action,i=t.dataset.idx;
+  if(a==='open'){if(SC[i]&&SC[i].path)window.plasmaAPI.launchApp(SC[i].path)}
+  else if(a==='del'){SC.splice(i,1);R()}
+  else if(a==='add'){setTimeout(showAppPicker,50)}
+  else if(a==='addfolder'){setTimeout(addFolderShortcut,50)}
+  else if(a==='tile'){T.textContent='tile...';window.plasmaAPI.tileCurrentDesktop().then(function(){T.textContent='OK'}).catch(function(e){T.textContent='ERR:'+e})}
+  else if(a==='master'){setTimeout(showMasterList,50)}
+  else if(a==='pick'){setTimeout(showWindowPicker,50)}
+  else if(a==='pickmode'){startPickMode()}
+  else if(a==='desk'){setTimeout(function(){var n=prompt('Ad:')||('M'+DS.length);window.plasmaAPI.createDesktop(n).then(load)},50)}
+});
+
+// Helper - menu item olustur
+function mi(icon,label,action,idx){
+var d=document.createElement('div');d.className='cx';
+d.dataset.action=action;if(idx!==undefined)d.dataset.idx=idx;
+d.innerHTML='<div class=cic>'+icon+'</div>'+label;return d;
+}
+function sp(){var d=document.createElement('div');d.className='cd';return d}
+
+function ctx(x,y,si){
+var m=document.getElementById('ctx');m.style.display='block';m.style.left=x+'px';m.style.top=y+'px';m.innerHTML='';
+if(si>=0){
+m.innerHTML='<div class=cx data-action=open data-idx='+si+'><div class=cic>▶</div>Aç</div><div class=cx data-action=del data-idx='+si+'><div class=cic>🗑</div>Sil</div><div class=cd></div><div class=cx data-action=close><div class=cic>✕</div>İptal</div>';
+}else{
+m.innerHTML='<div class=cx data-action=add><div class=cic>+</div>Kısayol Ekle</div><div class=cx data-action=addfolder><div class=cic>📁</div>Klasör Ekle</div><div class=cx data-action=tile><div class=cic>⬜</div>Tümünü Zimbala</div><div class=cx data-action=master><div class=cic>⭐</div>Master Seç</div><div class=cd></div><div class=cx data-action=pick><div class=cic>🪟</div>Pencereyi Ata (Liste)</div><div class=cx data-action=pickmode><div class=cic>🎯</div>Pencere Seç (Tıkla)</div><div class=cd></div><div class=cx data-action=desk><div class=cic>➕</div>Yeni Masaüstü</div><div class=cd></div><div class=cx data-action=close><div class=cic>✕</div>İptal</div>';
+}}document.addEventListener('click',function(e){if(e.target.closest&&!e.target.closest('#ctx'))document.getElementById('ctx').style.display='none'});
+
+// Master secici
+function showMasterList(){
+var m=document.getElementById('ctx');m.innerHTML='';
+m.style.cssText='display:block;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(25,25,30,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:8px;width:340px;max-height:380px;overflow-y:auto;z-index:99999;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:13px';
+m.appendChild(sp());
+var list=document.createElement('div');list.id='masterList';m.appendChild(list);
+m.appendChild(sp());
+m.appendChild(mi('✕','Kapat','close'));
+window.plasmaAPI.enumOpenWindows().then(function(wins){
+var filtered=wins.filter(function(w){return !w.title.includes('detbar')&&!w.title.includes('Wallpaper')&&w.title.length>0});
+if(!filtered.length){list.innerHTML='<div class=cx><div class=cic>⬜</div>Pencere yok</div>';return}
+filtered.forEach(function(w){
+var title=w.title.length>45?w.title.substring(0,42)+'...':w.title;
+var d=document.createElement('div');d.className='cx';d.style.cssText='flex-direction:column;align-items:stretch;padding:6px 10px;gap:4px';
+d.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class=cic>⬜</div><span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+title+'</span></div><div style="display:flex;gap:3px;padding-left:28px">'+DS.map(function(dsk,i){
+return'<button data-a="move" data-h="'+w.hwnd+'" data-t="'+i+'" class="tbtn" style="font-size:9px;padding:2px 7px;border-radius:5px;border:none;cursor:pointer;background:'+(i===DI?'rgba(0,212,255,0.15);color:#00d4ff':'rgba(255,255,255,0.06);color:rgba(255,255,255,0.5)')+'">'+dsk.name.substring(0,4)+'</button>';
+}).join('')+'<button data-a="promote" data-h="'+w.hwnd+'" class="tbtn" style="font-size:9px;padding:2px 7px;border-radius:5px;border:none;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5)">⭐Master</button></div>';
+d.querySelectorAll('.tbtn').forEach(function(b){
+b.addEventListener('click',function(e){e.stopPropagation();
+m.style.display='none';
+var hwnd=parseInt(this.dataset.h);
+if(this.dataset.a==='promote'){
+window.plasmaAPI.promoteMaster(hwnd).then(function(){window.plasmaAPI.tileCurrentDesktop()});
+}else{
+var tid=parseInt(this.dataset.t);
+window.plasmaAPI.moveWindowToDesktop(hwnd,tid).then(function(){load();window.plasmaAPI.tileCurrentDesktop()});
+}
+});
+});
+list.appendChild(d);
+});
+}).catch(function(){list.innerHTML='<div class=cx>Yüklenemedi</div>'});
+}
+
+// Pencere secici - listeden ata
+function showWindowPicker(){
+var m=document.getElementById('ctx');m.innerHTML='';
+m.style.cssText='display:block;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(25,25,30,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:8px;width:380px;max-height:420px;overflow-y:auto;z-index:99999;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:13px';
+var hdr=document.createElement('div');hdr.style.cssText='padding:6px 10px;color:rgba(255,255,255,0.5);font-size:11px';
+hdr.textContent='Bir pencere seç, hangi masaya atacağını belirle';m.appendChild(hdr);
+m.appendChild(sp());
+var list=document.createElement('div');list.id='wpList';m.appendChild(list);
+m.appendChild(sp());
+m.appendChild(mi('✕','Kapat','close'));
+window.plasmaAPI.enumOpenWindows().then(function(wins){
+var filtered=wins.filter(function(w){return !w.title.includes('detbar')&&!w.title.includes('Wallpaper')&&w.title.length>0});
+if(!filtered.length){list.innerHTML='<div class=cx><div class=cic>⬜</div>Açık pencere yok</div>';return}
+window.plasmaAPI.getAppDesktopMap().then(function(appMap){
+appMap=appMap||{};
+filtered.forEach(function(w){
+var title=w.title.length>50?w.title.substring(0,47)+'...':w.title;
+var d=document.createElement('div');d.className='cx';d.style.cssText='flex-direction:column;align-items:stretch;padding:6px 10px;gap:4px';
+var deskBtns=DS.map(function(dsk,i){
+var isCurrent=(i===DI);
+return'<button data-h="'+w.hwnd+'" data-t="'+i+'" class="wpbtn" style="font-size:9px;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;background:'+(isCurrent?'rgba(0,212,255,0.15);color:#00d4ff':'rgba(255,255,255,0.06);color:rgba(255,255,255,0.5)')+'">'+dsk.name.substring(0,5)+'</button>';
+}).join('');
+d.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class=cic>🪟</div><span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+title+'</span></div><div style="display:flex;gap:4px;padding-left:28px;flex-wrap:wrap">'+deskBtns+'</div>';
+d.querySelectorAll('.wpbtn').forEach(function(b){
+b.addEventListener('click',function(e){
+e.stopPropagation();
+var hwnd=parseInt(this.dataset.h);
+var tid=parseInt(this.dataset.t);
+window.plasmaAPI.moveWindowToDesktop(hwnd,tid).then(function(){
+window.plasmaAPI.tileCurrentDesktop();
+load();
+T.textContent='Atandı!';setTimeout(function(){T.textContent='OK'},1000);
+});
+});
+});
+list.appendChild(d);
+});
+});
+}).catch(function(){list.innerHTML='<div class=cx>Yüklenemedi</div>'});
+}
+
+// Pencere secme modu - tikla ile sec
+var pickModeActive=false;
+function startPickMode(){
+pickModeActive=true;
+document.body.style.cursor='crosshair';
+T.textContent='🎯 Bir pencereye tıkla...';
+// Her tıklamada kontrol et
+var pickHandler=function(e){
+if(!pickModeActive)return;
+e.preventDefault();e.stopPropagation();
+pickModeActive=false;
+document.body.style.cursor='';
+document.removeEventListener('click',pickHandler,true);
+window.plasmaAPI.getWindowUnderCursor().then(function(win){
+if(!win||!win.hwnd){T.textContent='Pencere bulunamadı';setTimeout(function(){T.textContent='OK'},1500);return}
+// Masta secici popup goster
+showDesktopPickPopup(win);
+});
+};
+// Kisa sure bekleyip dinleyiciyi ekle (kendi tikalamamizi atla)
+setTimeout(function(){
+document.addEventListener('click',pickHandler,true);
+},100);
+// ESC ile iptal
+var escHandler=function(e){
+if(e.key==='Escape'&&pickModeActive){
+pickModeActive=false;
+document.body.style.cursor='';
+document.removeEventListener('click',pickHandler,true);
+document.removeEventListener('keydown',escHandler);
+T.textContent='İptal';setTimeout(function(){T.textContent='OK'},1000);
+}
+};
+document.addEventListener('keydown',escHandler);
+}
+
+// Pencere icin masa secimi popup
+function showDesktopPickPopup(win){
+var m=document.getElementById('ctx');m.innerHTML='';
+m.style.cssText='display:block;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(25,25,30,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px;width:300px;z-index:99999;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:13px';
+var title=win.title.length>40?win.title.substring(0,37)+'...':win.title;
+m.innerHTML='<div style="padding:4px 0 8px;color:rgba(255,255,255,0.4);font-size:11px">Bu pencereyi hangi masaya atayalım?</div>'+
+'<div style="padding:4px 0 8px;color:#fff;font-size:13px;display:flex;align-items:center;gap:8px"><div class=cic>🪟</div>'+title+'</div>'+
+'<div class=cd></div>'+
+DS.map(function(dsk,i){
+return'<div class="cx deskpick" data-t="'+i+'" style="padding:8px 12px;cursor:pointer;border-radius:8px;margin:2px 0;background:'+(i===DI?'rgba(0,212,255,0.1)':'transparent')+';color:'+(i===DI?'#00d4ff':'rgba(255,255,255,0.6)')+'">'+dsk.name+'</div>';
+}).join('')+
+'<div class=cd></div>'+
+'<div class="cx deskpick" data-t="-1" style="padding:8px 12px;cursor:pointer;border-radius:8px;margin:2px 0;color:rgba(255,255,255,0.4)">Kaldır (Hiçbir masaya ait değil)</div>'+
+'<div class=cd></div>'+
+'<div class="cx" id="dppClose" style="padding:8px 12px;cursor:pointer;border-radius:8px;color:rgba(255,255,255,0.4)">İptal</div>';
+m.querySelectorAll('.deskpick').forEach(function(el){
+el.addEventListener('click',function(e){
+e.stopPropagation();
+var tid=parseInt(this.dataset.t);
+m.style.display='none';
+if(tid===-1){
+window.plasmaAPI.removeFromAllDesktops(win.hwnd).then(function(){
+T.textContent='Kaldırıldı';setTimeout(function(){T.textContent='OK'},1000);
+});
+}else{
+window.plasmaAPI.moveWindowToDesktop(win.hwnd,tid).then(function(){
+window.plasmaAPI.tileCurrentDesktop();
+load();
+T.textContent=DS[tid].name+' maskesine atandı!';setTimeout(function(){T.textContent='OK'},1000);
+});
+}
+});
+});
+document.getElementById('dppClose').addEventListener('click',function(){m.style.display='none'});
+}
+
+// Uygulama secici - tum PC uygulamalari
+function showAppPicker(){
+var m=document.getElementById('ctx');m.innerHTML='';
+m.style.cssText='display:block;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(25,25,30,0.97);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:8px;width:400px;max-height:500px;overflow-y:auto;z-index:99999;box-shadow:0 8px 40px rgba(0,0,0,0.6);font-size:13px';
+var inp=document.createElement('input');inp.style.cssText='width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;outline:none;margin:4px 0 8px';inp.placeholder='Tüm bilgisayarı ara...';m.appendChild(inp);
+m.appendChild(sp());var list=document.createElement('div');list.id='appList';m.appendChild(list);
+m.appendChild(sp());m.appendChild(mi('✕','Kapat','close'));
+inp.focus();
+var allApps=[];
+function mapPath(p,nm){
+if(!p)return nm||'';
+// Eger path zaten bir .exe veya .lnk ise dogrudan kullan
+if(p.endsWith('.exe')||p.endsWith('.lnk'))return p;
+// Eger path bir klasorse, icinde .exe ara
+var n=(nm||'').toLowerCase();
+var mp={chrome:'chrome',edge:'msedge',firefox:'firefox',vscode:'code',cmd:'cmd',powershell:'powershell',terminal:'wt',notepad:'notepad',calc:'calc',explorer:'explorer',taskmgr:'taskmgr',settings:'ms-settings:',control:'control',regedit:'regedit',spotify:'Spotify',vlc:'vlc',steam:'Steam',discord:'Discord'};
+if(mp[n])return mp[n];if(n.includes('edge'))return'msedge';if(n.includes('chrome'))return'chrome';if(n.includes('firefox'))return'firefox';
+// Klasor yolu ise explorer ile ac
+if(p.includes('\\')||p.includes('/'))return'explorer"'+p+'"';
+return'start:'+nm;
+}
+function getIcon(nm){
+var ik={'Edge':'🌐','Chrome':'🌐','Firefox':'🦊','Terminal':'💻','PowerShell':'💻','Word':'📝','Excel':'📊','PowerPoint':'📈','Teams':'💬','Spotify':'🎵','VLC':'🎬','Steam':'🎮','Discord':'💬','VS Code':'💻','Notepad':'📝','Calc':'🔢','Paint':'🎨','Settings':'⚙️','Explorer':'📁','Office':'📊','Adobe':'🎨','Zoom':'📹','Skype':'💬','Steam':'🎮','Git':'💻','Docker':'🐳','Python':'🐍','Node':'💚','Java':'☕','7zip':'📦','WinRAR':'📦','iTunes':'🎵','Chrome':'🌐'};
+for(var k in ik)if(nm.toLowerCase().includes(k.toLowerCase()))return ik[k];return'📱';
+}
+async function loadApps(){
+try{
+var all=await window.plasmaAPI.getInstalledApps();
+allApps=(all||[]).map(function(a){
+var path=a.path||'';
+var cmd=mapPath(path,a.name);
+return{name:a.name,path:cmd,icon:getIcon(a.name),publisher:a.publisher||'',source:a.source||''};
+});
+renderApps('');
+}catch(e){list.innerHTML='<div class=cx>Yüklenemedi: '+e+'</div>'}
+}
+function renderApps(q){
+list.innerHTML='';
+var fl=allApps;
+if(q){
+fl=allApps.filter(function(a){
+return a.name.toLowerCase().includes(q)||a.publisher.toLowerCase().includes(q)||a.path.toLowerCase().includes(q);
+});
+}
+if(!fl.length){list.innerHTML='<div class=cx>Bulunamadı</div>';return}
+fl.slice(0,50).forEach(function(a){
+var d=mi(a.icon,a.name,function(){window.plasmaAPI.addDesktopShortcut(DI,a.name,a.path,a.icon).then(load)});
+list.appendChild(d);
+});
+if(fl.length>50){
+var more=document.createElement('div');more.className='cx';more.style.color='rgba(255,255,255,0.3)';more.textContent='+'+(fl.length-50)+' daha...';
+list.appendChild(more);
+}
+}
+inp.addEventListener('input',function(){renderApps(inp.value.toLowerCase())});
+loadApps();
+}
+
+// Klasor kisayol ekle
+function addFolderShortcut(){
+window.plasmaAPI.pickFolder('Masaüstüne Eklenecek Klasörü Seç').then(function(path){
+if(!path)return;
+var name=path.split('\\').pop()||path.split('/').pop()||path;
+window.plasmaAPI.addDesktopShortcut(DI,name,path,'📁').then(function(){
+load();
+T.textContent='Klasör eklendi!';setTimeout(function(){T.textContent='OK'},1500);
+});
+});
+}
+
+function R(){
+var e=document.getElementById('desk');e.innerHTML=SC.map(function(s,i){return'<div class=s data-i='+i+' style="left:'+s.x+'px;top:'+s.y+'px"><div class=si>'+s.icon+'</div><div class=sn>'+s.name+'</div></div>'}).join('');
+e.querySelectorAll('.s').forEach(function(d){
+var idx=parseInt(d.dataset.i),dr=false,dx=0,dy=0,ox=0,oy=0;
+d.addEventListener('dblclick',function(){if(SC[idx]&&SC[idx].path)window.plasmaAPI.launchApp(SC[idx].path)});
+d.addEventListener('mousedown',function(e){if(e.button!==0)return;dr=true;dx=e.clientX;dy=e.clientY;ox=parseFloat(d.style.left)||0;oy=parseFloat(d.style.top)||0;e.preventDefault()});
+document.addEventListener('mousemove',function(e){if(!dr)return;d.style.left=Math.max(0,ox+e.clientX-dx)+'px';d.style.top=Math.max(0,oy+e.clientY-dy)+'px'});
+document.addEventListener('mouseup',function(){if(!dr)return;dr=false;window.plasmaAPI.updateShortcutPosition(DI,idx,parseFloat(d.style.left)||0,parseFloat(d.style.top)||0)});
+});
+}
+
+function load(){
+window.plasmaAPI.getDesktops().then(function(d){
+DS=d.desktops||[];DI=d.current||0;SC=(DS[DI]&&DS[DI].shortcuts)||[];R();
+var sw=document.getElementById('sw');sw.innerHTML='';
+DS.forEach(function(d,i){var b=document.createElement('button');b.className='p'+(i===DI?' pn':'');b.textContent=d.name;b.addEventListener('click',function(){go(i)});sw.appendChild(b)});
+}).catch(function(){setTimeout(load,1000)});
+}
+
+function go(id){DI=id;window.plasmaAPI.switchDesktop(id).then(function(){load()})}
+document.addEventListener('wheel',function(e){if(e.ctrlKey||e.metaKey){e.preventDefault();var n=Math.max(0,Math.min(DS.length-1,DI+(e.deltaY>0?1:-1)));if(n!==DI)go(n)}},{passive:false});
+
+load();
+</script>
+</body>
+</html>
