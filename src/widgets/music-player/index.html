@@ -28,6 +28,11 @@ body{background:#1e1e23;font-family:-apple-system,'Segoe UI',sans-serif;overflow
 .ctrl-btn.prev:hover,.ctrl-btn.next:hover{background:rgba(255,255,255,0.12);color:#fff}
 .ctrl-btn.play{width:42px;height:42px;background:rgba(0,212,255,0.15);color:#00d4ff;font-size:16px}
 .ctrl-btn.play:hover{background:rgba(0,212,255,0.3);transform:scale(1.05)}
+.vol-btn{width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);transition:all .2s}
+.vol-btn:hover{background:rgba(255,255,255,0.12);color:#fff}
+.volume-bar{display:flex;align-items:center;gap:4px;padding:2px 0;justify-content:center}
+.volume-slider{-webkit-appearance:none;width:80px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;cursor:pointer}
+.volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent,#00d4ff);cursor:pointer}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:rgba(255,255,255,0.15);gap:8px;padding:20px}
 .empty-state .icon{font-size:36px}
 .empty-state .text{font-size:12px}
@@ -57,6 +62,12 @@ body{background:#1e1e23;font-family:-apple-system,'Segoe UI',sans-serif;overflow
 <button class="ctrl-btn play" id="playBtn">▶</button>
 <button class="ctrl-btn next" id="nextBtn">⏭</button>
 </div>
+<div class="volume-bar">
+<button class="vol-btn" id="volDownBtn">🔉</button>
+<input type="range" class="volume-slider" id="volSlider" min="0" max="100" value="50">
+<button class="vol-btn" id="volUpBtn">🔊</button>
+<button class="vol-btn" id="volMuteBtn">🔇</button>
+</div>
 <div class="empty-state" id="emptyState" style="display:none">
 <div class="icon">🎵</div>
 <div class="text">Müzik çalmıyor</div>
@@ -71,6 +82,9 @@ document.getElementById('closeBtn').addEventListener('click',function(){window.p
 document.getElementById('playBtn').addEventListener('click',function(){window.plasmaAPI.mediaToggle()});
 document.getElementById('prevBtn').addEventListener('click',function(){window.plasmaAPI.mediaPrev('')});
 document.getElementById('nextBtn').addEventListener('click',function(){window.plasmaAPI.mediaNext('')});
+document.getElementById('volUpBtn').addEventListener('click',function(){window.plasmaAPI.mediaVolumeUp()});
+document.getElementById('volDownBtn').addEventListener('click',function(){window.plasmaAPI.mediaVolumeDown()});
+document.getElementById('volMuteBtn').addEventListener('click',function(){window.plasmaAPI.mediaMute()});
 document.getElementById('progressArea').addEventListener('click',function(e){
 var rect=document.getElementById('progBar').getBoundingClientRect();
 window.plasmaAPI.mediaSeek((e.clientX-rect.left)/rect.width);

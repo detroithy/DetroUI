@@ -241,21 +241,26 @@ pub async fn get_installed_apps() -> Result<Vec<Value>, String> {
 
 #[tauri::command]
 pub async fn launch_app(app: tauri::AppHandle, state: State<'_, AppState>, path: String) -> Result<(), String> {
-    // Klasor yolu mu? (backslash iceriyor ve .exe/.lnk degil)
-    let is_folder = path.contains('\\') && !path.ends_with(".exe") && !path.ends_with(".lnk") && !path.contains(' ');
-    let is_exe = path.ends_with(".exe") || path.ends_with(".lnk");
-    let is_command = path.starts_with("start ") || path.starts_with("shutdown") || path.starts_with("rundll32");
-    
-    let cmd = if path.starts_with("start:") {
+    let cmd = if path == "explorer.exe" || path == "explorer" || path.to_lowercase() == "explorer" {
+        "explorer.exe".to_string()
+    } else if path == "wt.exe" || path.to_lowercase() == "terminal" {
+        "start wt.exe".to_string()
+    } else if path.starts_with("start ") {
+        path.clone()
+    } else if path.starts_with("msedge:") || path.starts_with("chrome:") || path.starts_with("firefox:") || path.starts_with("http") {
+        format!("start \"\" \"{}\"", path)
+    } else if path.starts_with("start:") {
         format!("start \"\" \"{}\"", path.trim_start_matches("start:"))
     } else if path.ends_with(":") {
         format!("start {}", path)
-    } else if is_folder {
+    } else if path.contains('\\') && !path.ends_with(".exe") && !path.ends_with(".lnk") && !path.contains(' ') {
         format!("explorer \"{}\"", path)
-    } else if is_exe && path.contains(' ') {
-        format!("start \"\" \"{}\"", path)
-    } else if is_exe {
-        format!("start \"\" \"{}\"", path)
+    } else if path.ends_with(".exe") || path.ends_with(".lnk") {
+        if path.contains(' ') {
+            format!("start \"\" \"{}\"", path)
+        } else {
+            format!("start \"\" \"{}\"", path)
+        }
     } else if path.contains(' ') {
         format!("start \"\" \"{}\"", path)
     } else {
@@ -424,6 +429,24 @@ pub async fn media_toggle() -> Result<(), String> {
 pub async fn media_seek(percent: f64) -> Result<(), String> {
     let key = if percent > 0.5 { "^({RIGHT})" } else { "^({LEFT})" };
     send_media_key(key);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn media_volume_up() -> Result<(), String> {
+    send_media_key("{VOLUME_UP}");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn media_volume_down() -> Result<(), String> {
+    send_media_key("{VOLUME_DOWN}");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn media_mute() -> Result<(), String> {
+    send_media_key("{VOLUME_MUTE}");
     Ok(())
 }
 
@@ -914,6 +937,28 @@ pub async fn create_desktop(state: State<'_, AppState>, name: String) -> Result<
 }
 
 #[tauri::command]
+pub async fn delete_desktop(state: State<'_, AppState>, id: usize) -> Result<(), String> {
+    let mut mgr = state.desktop_manager.lock().unwrap();
+    if mgr.desktops.len() <= 1 { return Err("Son masaüstü silinemez".into()); }
+    if id >= mgr.desktops.len() { return Err("Geçersiz masaüstü".into()); }
+    mgr.desktops.remove(id);
+    // ID'leri güncelle
+    for (i, d) in mgr.desktops.iter_mut().enumerate() { d.id = i; }
+    if mgr.current >= mgr.desktops.len() { mgr.current = mgr.desktops.len() - 1; }
+    else if mgr.current > id { mgr.current -= 1; }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn rename_desktop(state: State<'_, AppState>, id: usize, name: String) -> Result<(), String> {
+    let mut mgr = state.desktop_manager.lock().unwrap();
+    if id < mgr.desktops.len() {
+        mgr.desktops[id].name = name;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn enum_open_windows() -> Result<Value, String> {
     let wins = crate::virtual_desktop::enum_windows();
     Ok(json!(wins.iter().map(|w| json!({
@@ -946,8 +991,14 @@ pub async fn hide_app_window(hwnd: isize) -> Result<(), String> {
 pub async fn add_desktop_shortcut(state: State<'_, AppState>, desktop_id: usize, name: String, path: String, icon: String) -> Result<(), String> {
     let mut mgr = state.desktop_manager.lock().unwrap();
     if desktop_id < mgr.desktops.len() {
+        let count = mgr.desktops[desktop_id].shortcuts.len();
+        let cols = 6;
+        let col = (count % cols) as f64;
+        let row = (count / cols) as f64;
+        let x = 40.0 + col * 90.0;
+        let y = 40.0 + row * 100.0;
         mgr.desktops[desktop_id].shortcuts.push(crate::virtual_desktop::Shortcut {
-            name, path, icon, x: 50.0, y: 50.0,
+            name, path, icon, x, y,
         });
     }
     Ok(())
@@ -992,13 +1043,12 @@ pub async fn show_desktop(app: tauri::AppHandle) -> Result<bool, String> {
 
     win.show().map_err(|e| e.to_string())?;
 
-    // WebView2 context menu'yu native seviyede kapat + noactivate
+    // WebView2 context menu'yu native seviyede kapat
     #[cfg(target_os = "windows")]
     {
         let hwnd_val = win.hwnd().map_err(|_| "hwnd error".to_string())?;
         let raw: isize = unsafe { std::mem::transmute(hwnd_val) };
         crate::wallpaper::disable_context_menu(raw);
-        crate::wallpaper::make_noactivate(raw);
     }
 
     // Taskbar'i one getir

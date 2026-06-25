@@ -54,6 +54,8 @@ document.getElementById('ctx').addEventListener('click',function(e){
   else if(a==='pick'){setTimeout(showWindowPicker,50)}
   else if(a==='pickmode'){startPickMode()}
   else if(a==='desk'){setTimeout(function(){var n=prompt('Ad:')||('M'+DS.length);window.plasmaAPI.createDesktop(n).then(load)},50)}
+  else if(a==='rename'){setTimeout(function(){var idx=parseInt(i);var old=DS[idx]?DS[idx].name:'';var n=prompt('Yeni ad:',old);if(n&&n!==old)window.plasmaAPI.renameDesktop(idx,n).then(load)},50)}
+  else if(a==='deletedesk'){var idx=parseInt(i);if(DS.length<=1){T.textContent='Son masaüstü silinemez';setTimeout(function(){T.textContent='OK'},1500);return}if(confirm('\"'+(DS[idx]?DS[idx].name:'')+'\" masaüstünü silmek istediğine emin misin?')){window.plasmaAPI.deleteDesktop(idx).then(load)}}
 });
 
 // Helper - menu item olustur
@@ -301,11 +303,20 @@ document.addEventListener('mouseup',function(){if(!dr)return;dr=false;window.pla
 }
 
 function load(){
-window.plasmaAPI.getDesktops().then(function(d){
-DS=d.desktops||[];DI=d.current||0;SC=(DS[DI]&&DS[DI].shortcuts)||[];R();
-var sw=document.getElementById('sw');sw.innerHTML='';
-DS.forEach(function(d,i){var b=document.createElement('button');b.className='p'+(i===DI?' pn':'');b.textContent=d.name;b.addEventListener('click',function(){go(i)});sw.appendChild(b)});
-}).catch(function(){setTimeout(load,1000)});
+  window.plasmaAPI.getDesktops().then(function(d){
+    DS=d.desktops||[];DI=d.current||0;SC=(DS[DI]&&DS[DI].shortcuts)||[];R();
+    var sw=document.getElementById('sw');sw.innerHTML='';
+    DS.forEach(function(d,i){
+      var b=document.createElement('button');b.className='p'+(i===DI?' pn':'');b.textContent=d.name;
+      b.addEventListener('click',function(){go(i)});
+      b.addEventListener('contextmenu',function(e){
+        e.preventDefault();e.stopPropagation();
+        var m=document.getElementById('ctx');m.style.display='block';m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';m.innerHTML='';
+        m.innerHTML='<div class=cx data-action="rename" data-idx="'+i+'"><div class=cic>✏️</div>Yeniden Adlandır</div><div class=cx data-action="deletedesk" data-idx="'+i+'"><div class=cic>🗑</div>Sil</div><div class=cd></div><div class=cx data-action=close><div class=cic>✕</div>İptal</div>';
+      });
+      sw.appendChild(b);
+    });
+  }).catch(function(){setTimeout(load,1000)});
 }
 
 function go(id){DI=id;window.plasmaAPI.switchDesktop(id).then(function(){load()})}

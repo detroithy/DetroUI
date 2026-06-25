@@ -75,7 +75,14 @@ function updateClock() {
 
 function setupEventListeners() {
   var si = document.getElementById('searchInput');
-  if (si) si.addEventListener('focus', function() { window.plasmaAPI.openLauncher(); });
+  var lastOpen = 0;
+  if (si) si.addEventListener('click', function() {
+    var now = Date.now();
+    if (now - lastOpen < 800) return;
+    lastOpen = now;
+    window.plasmaAPI.openLauncher();
+    si.blur();
+  });
 
   document.querySelectorAll('.app-button').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -94,4 +101,10 @@ function setupEventListeners() {
 
   var sb = document.getElementById('settingsBtn');
   if (sb) sb.addEventListener('click', function() { window.plasmaAPI.openSettings(); });
+
+  var ni = document.getElementById('networkIcon');
+  if (ni) ni.addEventListener('click', function() { window.plasmaAPI.launchApp('start ms-settings:network-wifi'); });
+
+  var vi = document.getElementById('volumeIcon');
+  if (vi) vi.addEventListener('click', function() { window.plasmaAPI.launchApp('start ms-settings:sound'); });
 }
