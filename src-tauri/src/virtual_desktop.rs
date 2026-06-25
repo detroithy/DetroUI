@@ -57,6 +57,20 @@ pub struct DesktopManager {
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct DesktopManagerData {
+    current: usize,
+    desktops: Vec<DesktopData>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct DesktopData {
+    id: usize,
+    name: String,
+    shortcuts: Vec<Shortcut>,
+    widget_ids: Vec<String>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Desktop {
     pub id: usize,
     pub name: String,
@@ -77,13 +91,69 @@ pub struct Shortcut {
 
 impl DesktopManager {
     pub fn new() -> Self {
-        DesktopManager {
-            desktops: vec![
-                Desktop { id: 0, name: "Ana".into(), shortcuts: vec![], widget_ids: vec!["clock".into(), "system-monitor".into()], window_hwnds: vec![] },
-                Desktop { id: 1, name: "İş".into(), shortcuts: vec![], widget_ids: vec!["notes".into()], window_hwnds: vec![] },
-                Desktop { id: 2, name: "Eğlence".into(), shortcuts: vec![], widget_ids: vec!["music-player".into(), "weather".into()], window_hwnds: vec![] },
-            ],
-            current: 0,
+        // Store'dan yukle
+        let path = dirs::config_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("detbar")
+            .join("desktops.json");
+        
+        let data = if path.exists() {
+            std::fs::read_to_string(&path)
+                .ok()
+                .and_then(|s| serde_json::from_str::<DesktopManagerData>(&s).ok())
+        } else {
+            None
+        };
+        
+        if let Some(d) = data {
+            let mut desktops: Vec<Desktop> = d.desktops.into_iter().enumerate().map(|(i, dd)| {
+                Desktop {
+                    id: i,
+                    name: dd.name,
+                    shortcuts: dd.shortcuts,
+                    widget_ids: dd.widget_ids,
+                    window_hwnds: vec![],
+                }
+            }).collect();
+            if desktops.is_empty() {
+                desktops = Self::default_desktops();
+            }
+            DesktopManager { desktops, current: 0 }
+        } else {
+            DesktopManager {
+                desktops: Self::default_desktops(),
+                current: 0,
+            }
+        }
+    }
+    
+    fn default_desktops() -> Vec<Desktop> {
+        vec![
+            Desktop { id: 0, name: "Ana".into(), shortcuts: vec![], widget_ids: vec!["clock".into(), "system-monitor".into()], window_hwnds: vec![] },
+            Desktop { id: 1, name: "İş".into(), shortcuts: vec![], widget_ids: vec!["notes".into()], window_hwnds: vec![] },
+            Desktop { id: 2, name: "Eğlence".into(), shortcuts: vec![], widget_ids: vec!["music-player".into(), "weather".into()], window_hwnds: vec![] },
+        ]
+    }
+    
+    pub fn save(&self) {
+        let path = dirs::config_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("detbar")
+            .join("desktops.json");
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let data = DesktopManagerData {
+            current: self.current,
+            desktops: self.desktops.iter().map(|d| DesktopData {
+                id: d.id,
+                name: d.name.clone(),
+                shortcuts: d.shortcuts.clone(),
+                widget_ids: d.widget_ids.clone(),
+            }).collect(),
+        };
+        if let Ok(json) = serde_json::to_string_pretty(&data) {
+            let _ = std::fs::write(&path, json);
         }
     }
 

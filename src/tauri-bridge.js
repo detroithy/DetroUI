@@ -98,6 +98,7 @@
     hideAppWindow: function(hwnd) { return call('hideAppWindow', { hwnd: hwnd }); },
     addDesktopShortcut: function(desktopId, name, path, icon) { return call('addDesktopShortcut', { desktopId: desktopId, name: name, path: path, icon: icon }); },
     updateShortcutPosition: function(desktopId, index, x, y) { return call('updateShortcutPosition', { desktopId: desktopId, index: index, x: x, y: y }); },
+    deleteDesktopShortcut: function(desktopId, index) { return call('deleteDesktopShortcut', { desktopId: desktopId, index: index }); },
     tileCurrentDesktop: function() { return call('tileCurrentDesktop'); },
     promoteMaster: function(hwnd) { return call('promoteMaster', { hwnd: hwnd }); },
     moveWindowToDesktop: function(hwnd, toId, remember) { return call('moveWindowToDesktop', { hwnd: hwnd, toId: toId, remember: remember || false }); },

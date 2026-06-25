@@ -24,6 +24,26 @@
       border-radius: 24px;
       gap: 6px;
     }
+    .taskbar-left, .taskbar-right {
+      flex-direction: column;
+      width: calc(100% - 8px);
+      height: auto;
+      padding: 12px 4px;
+      justify-content: flex-start;
+    }
+    .taskbar-left .search-bar, .taskbar-right .search-bar { width: 32px; min-width: 32px; height: 32px; padding: 0; justify-content: center; }
+    .taskbar-left .search-bar input, .taskbar-right .search-bar input { width: 0; height: 0; padding: 0; }
+    .taskbar-left .search-icon, .taskbar-right .search-icon { margin: 0; }
+    .taskbar-left .system-tray, .taskbar-right .system-tray { margin: 0; flex-direction: column; padding: 10px 0; }
+    .taskbar-left .clock, .taskbar-right .clock { writing-mode: vertical-lr; text-orientation: mixed; min-width: auto; font-size: 11px; }
+    .taskbar-left .pinned-apps, .taskbar-right .pinned-apps { flex-direction: column; }
+    .taskbar-left .widget-buttons, .taskbar-right .widget-buttons { flex-direction: column; }
+    .taskbar-left .running-apps, .taskbar-right .running-apps { flex-direction: column; padding: 6px 0; }
+    .taskbar-top {
+      height: calc(100% - 8px);
+      width: auto;
+    }
+    .taskbar-top .system-tray { margin-left: auto; }
     .search-bar {
       display: flex; align-items: center; height: 32px; padding: 0 12px;
       background: rgba(255,255,255,0.08); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); min-width: 160px;

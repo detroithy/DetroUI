@@ -78,15 +78,15 @@ function setupEventListeners() {
   var lastOpen = 0;
   if (si) si.addEventListener('click', function() {
     var now = Date.now();
-    if (now - lastOpen < 800) return;
+    if (now - lastOpen < 1000) { si.blur(); return; }
     lastOpen = now;
     window.plasmaAPI.openLauncher();
-    si.blur();
+    setTimeout(function(){ si.blur(); si.value=''; }, 100);
   });
 
   document.querySelectorAll('.app-button').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var paths = { explorer: 'explorer.exe', browser: 'start msedge:', terminal: 'wt.exe' };
+      var paths = { explorer: 'explorer.exe', browser: 'msedge:', terminal: 'wt.exe' };
       if (paths[btn.dataset.app]) window.plasmaAPI.launchApp(paths[btn.dataset.app]);
     });
   });

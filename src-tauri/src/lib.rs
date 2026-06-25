@@ -76,6 +76,7 @@ pub fn run() {
             commands::hide_app_window,
             commands::add_desktop_shortcut,
             commands::update_shortcut_position,
+            commands::delete_desktop_shortcut,
             commands::show_desktop,
             commands::tile_current_desktop,
             commands::promote_master,

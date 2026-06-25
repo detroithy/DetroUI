@@ -14,7 +14,7 @@ body{background:transparent;font-family:'Segoe UI',sans-serif;overflow:hidden;wi
 .cx:hover{background:rgba(255,255,255,0.06);color:#fff}
 .cic{font-size:15px;width:20px;text-align:center;flex-shrink:0}
 .cd{height:1px;background:rgba(255,255,255,0.04);margin:4px 8px}
-#sw{position:fixed;bottom:16px;right:16px;display:flex;gap:4px;padding:4px 10px;background:rgba(15,15,20,0.8);backdrop-filter:blur(12px);border-radius:16px;border:1px solid rgba(255,255,255,0.04);z-index:9999}
+#sw{position:fixed;bottom:12px;right:16px;display:flex;gap:4px;padding:4px 10px;background:rgba(15,15,20,0.9);backdrop-filter:blur(12px);border-radius:16px;border:1px solid rgba(255,255,255,0.04);z-index:9999}
 .p{padding:4px 10px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,0.35);cursor:pointer;font-size:11px;transition:all .2s}
 .p:hover{color:#fff;background:rgba(255,255,255,0.06)}
 .pn{color:#00d4ff;background:rgba(0,212,255,0.1)}
@@ -46,7 +46,7 @@ document.getElementById('ctx').addEventListener('click',function(e){
   document.getElementById('ctx').style.display='none';
   var a=t.dataset.action,i=t.dataset.idx;
   if(a==='open'){if(SC[i]&&SC[i].path)window.plasmaAPI.launchApp(SC[i].path)}
-  else if(a==='del'){SC.splice(i,1);R()}
+  else if(a==='del'){var idx2=parseInt(i);SC.splice(idx2,1);R();window.plasmaAPI.deleteDesktopShortcut(DI,idx2)}
   else if(a==='add'){setTimeout(showAppPicker,50)}
   else if(a==='addfolder'){setTimeout(addFolderShortcut,50)}
   else if(a==='tile'){T.textContent='tile...';window.plasmaAPI.tileCurrentDesktop().then(function(){T.textContent='OK'}).catch(function(e){T.textContent='ERR:'+e})}
@@ -232,15 +232,12 @@ inp.focus();
 var allApps=[];
 function mapPath(p,nm){
 if(!p)return nm||'';
-// Eger path zaten bir .exe veya .lnk ise dogrudan kullan
 if(p.endsWith('.exe')||p.endsWith('.lnk'))return p;
-// Eger path bir klasorse, icinde .exe ara
 var n=(nm||'').toLowerCase();
 var mp={chrome:'chrome',edge:'msedge',firefox:'firefox',vscode:'code',cmd:'cmd',powershell:'powershell',terminal:'wt',notepad:'notepad',calc:'calc',explorer:'explorer',taskmgr:'taskmgr',settings:'ms-settings:',control:'control',regedit:'regedit',spotify:'Spotify',vlc:'vlc',steam:'Steam',discord:'Discord'};
 if(mp[n])return mp[n];if(n.includes('edge'))return'msedge';if(n.includes('chrome'))return'chrome';if(n.includes('firefox'))return'firefox';
-// Klasor yolu ise explorer ile ac
-if(p.includes('\\')||p.includes('/'))return'explorer"'+p+'"';
-return'start:'+nm;
+if(p.includes('\\')||p.includes('/'))return p;
+return n;
 }
 function getIcon(nm){
 var ik={'Edge':'🌐','Chrome':'🌐','Firefox':'🦊','Terminal':'💻','PowerShell':'💻','Word':'📝','Excel':'📊','PowerPoint':'📈','Teams':'💬','Spotify':'🎵','VLC':'🎬','Steam':'🎮','Discord':'💬','VS Code':'💻','Notepad':'📝','Calc':'🔢','Paint':'🎨','Settings':'⚙️','Explorer':'📁','Office':'📊','Adobe':'🎨','Zoom':'📹','Skype':'💬','Steam':'🎮','Git':'💻','Docker':'🐳','Python':'🐍','Node':'💚','Java':'☕','7zip':'📦','WinRAR':'📦','iTunes':'🎵','Chrome':'🌐'};
@@ -267,8 +264,13 @@ return a.name.toLowerCase().includes(q)||a.publisher.toLowerCase().includes(q)||
 }
 if(!fl.length){list.innerHTML='<div class=cx>Bulunamadı</div>';return}
 fl.slice(0,50).forEach(function(a){
-var d=mi(a.icon,a.name,function(){window.plasmaAPI.addDesktopShortcut(DI,a.name,a.path,a.icon).then(load)});
-list.appendChild(d);
+  var d=document.createElement('div');d.className='cx';
+  d.innerHTML='<div class=cic>'+a.icon+'</div>'+a.name;
+  d.addEventListener('click',function(e){
+    e.stopPropagation();
+    window.plasmaAPI.addDesktopShortcut(DI,a.name,a.path,a.icon).then(load);
+  });
+  list.appendChild(d);
 });
 if(fl.length>50){
 var more=document.createElement('div');more.className='cx';more.style.color='rgba(255,255,255,0.3)';more.textContent='+'+(fl.length-50)+' daha...';

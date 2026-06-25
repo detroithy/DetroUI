@@ -241,35 +241,49 @@ pub async fn get_installed_apps() -> Result<Vec<Value>, String> {
 
 #[tauri::command]
 pub async fn launch_app(app: tauri::AppHandle, state: State<'_, AppState>, path: String) -> Result<(), String> {
-    let cmd = if path == "explorer.exe" || path == "explorer" || path.to_lowercase() == "explorer" {
-        "explorer.exe".to_string()
-    } else if path == "wt.exe" || path.to_lowercase() == "terminal" {
-        "start wt.exe".to_string()
-    } else if path.starts_with("start ") {
-        path.clone()
-    } else if path.starts_with("msedge:") || path.starts_with("chrome:") || path.starts_with("firefox:") || path.starts_with("http") {
-        format!("start \"\" \"{}\"", path)
-    } else if path.starts_with("start:") {
-        format!("start \"\" \"{}\"", path.trim_start_matches("start:"))
-    } else if path.ends_with(":") {
-        format!("start {}", path)
-    } else if path.contains('\\') && !path.ends_with(".exe") && !path.ends_with(".lnk") && !path.contains(' ') {
-        format!("explorer \"{}\"", path)
-    } else if path.ends_with(".exe") || path.ends_with(".lnk") {
-        if path.contains(' ') {
-            format!("start \"\" \"{}\"", path)
+    // URI protokolleri ve özel komutlar
+    let is_uri = path.starts_with("msedge:") || path.starts_with("chrome:") || path.starts_with("firefox:") || path.starts_with("http://") || path.starts_with("https://");
+    let is_settings = path.starts_with("ms-settings:");
+    let is_syscmd = path.starts_with("shutdown") || path.starts_with("rundll32");
+    let is_folder = std::path::Path::new(&path).is_dir();
+    let is_exe = path.ends_with(".exe");
+
+    if is_uri || is_settings || is_syscmd {
+        Command::new("cmd")
+            .args(["/C", "start", "", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    } else if is_exe {
+        // .exe dosyasini dogrudan calistir, cmd /C kullanma
+        if path.contains('/') || path.contains('\\') {
+            // Tam yol varsa dogrudan calistir
+            Command::new(&path)
+                .spawn()
+                .map_err(|e| format!("{} açılamadı: {}", path, e))?;
         } else {
-            format!("start \"\" \"{}\"", path)
+            // Sadece exe adi varsa start ile dene
+            Command::new("cmd")
+                .args(["/C", "start", "", &path])
+                .spawn()
+                .map_err(|e| format!("{} açılamadı: {}", path, e))?;
         }
-    } else if path.contains(' ') {
-        format!("start \"\" \"{}\"", path)
+    } else if is_folder {
+        Command::new("explorer")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| format!("{} açılamadı: {}", path, e))?;
+    } else if path.ends_with(".lnk") {
+        Command::new("cmd")
+            .args(["/C", "start", "", &path])
+            .spawn()
+            .map_err(|e| format!("{} açılamadı: {}", path, e))?;
     } else {
-        format!("start {}", path)
-    };
-    Command::new("cmd")
-        .args(["/C", &cmd])
-        .spawn()
-        .map_err(|e| e.to_string())?;
+        // Diğer her şey için start kullan
+        Command::new("cmd")
+            .args(["/C", "start", "", &path])
+            .spawn()
+            .map_err(|e| format!("{} açılamadı: {}", path, e))?;
+    }
 
     // 1.5 saniye bekle, yeni pencereleri bul ve anlik masaustune ata
     drop(state);
@@ -285,13 +299,16 @@ pub async fn launch_app(app: tauri::AppHandle, state: State<'_, AppState>, path:
         
         if !new_hwnds.is_empty() {
             let state: State<'_, AppState> = handle.state();
-            let store = state.store.lock().unwrap();
-            let auto_assign = store.get("autoAssignWindows").as_bool().unwrap_or(true);
-            let app_map = store.get("appDesktopMap").as_object().cloned().unwrap_or_default();
-            let taskbar_h2 = store.get("taskbarHeight").as_i64().unwrap_or(48) as i32;
-            drop(store);
+            let (auto_assign, app_map, taskbar_h2) = {
+                let store = match state.store.lock() { Ok(s) => s, Err(_) => return };
+                let auto_assign = store.get("autoAssignWindows").as_bool().unwrap_or(true);
+                let app_map = store.get("appDesktopMap").as_object().cloned().unwrap_or_default();
+                let taskbar_h2 = store.get("taskbarHeight").as_i64().unwrap_or(48) as i32;
+                drop(store);
+                (auto_assign, app_map, taskbar_h2)
+            };
             
-            let mut mgr = state.desktop_manager.lock().unwrap();
+            let mut mgr = match state.desktop_manager.lock() { Ok(m) => m, Err(_) => return };
             let cur = mgr.current;
             let existing: Vec<isize> = mgr.desktops.iter()
                 .flat_map(|d| d.window_hwnds.iter().cloned())
@@ -299,8 +316,6 @@ pub async fn launch_app(app: tauri::AppHandle, state: State<'_, AppState>, path:
             
             for hwnd in &new_hwnds {
                 if existing.contains(hwnd) { continue; }
-                
-                // Process adini bul, appDesktopMap'te varsa o masaustune ata
                 let proc_name = crate::virtual_desktop::get_process_name(*hwnd);
                 let target_desk = proc_name.as_ref()
                     .and_then(|name| app_map.get(name))
@@ -315,7 +330,6 @@ pub async fn launch_app(app: tauri::AppHandle, state: State<'_, AppState>, path:
                 }
             }
             
-            // Tile only if windows were assigned to current desktop
             let cur_hwnds = mgr.desktops[cur].window_hwnds.clone();
             drop(mgr);
             crate::virtual_desktop::tile_desktop_windows(&cur_hwnds, taskbar_h2);
@@ -606,7 +620,7 @@ fn widget_config(id: &str) -> Option<(u32, u32, &'static str)> {
         "system-monitor" => Some((300, 350, "widgets/system-monitor/index.html")),
         "weather" => Some((280, 320, "widgets/weather/index.html")),
         "notes" => Some((350, 400, "widgets/notes/index.html")),
-        "music-player" => Some((380, 200, "widgets/music-player/index.html")),
+        "music-player" => Some((380, 280, "widgets/music-player/index.html")),
         _ => None,
     }
 }
@@ -816,24 +830,33 @@ pub async fn get_window_position(app: tauri::AppHandle, label: String) -> Result
 #[tauri::command]
 pub async fn set_taskbar_config(app: tauri::AppHandle, position: String, height: i32) -> Result<(), String> {
     if let Some(win) = app.get_webview_window("taskbar") {
-        let sf = win.scale_factor().map_err(|e| e.to_string())?;
-        let sw = win.outer_size().map_err(|e| e.to_string())?;
-        let new_width = if position == "left" || position == "right" { 48 } else { sw.width.min(700 * sf as u32) };
-        let new_height = if position == "left" || position == "right" { sw.height } else { height as u32 };
-        win.set_size(tauri::PhysicalSize::new(new_width, new_height)).map_err(|e| e.to_string())?;
+        let (mw, mh) = if let Ok(Some(monitor)) = win.primary_monitor() {
+            (monitor.size().width as i32, monitor.size().height as i32)
+        } else {
+            (1920, 1080)
+        };
 
-        if let Ok(Some(monitor)) = win.primary_monitor() {
-            let mw = monitor.size().width as i32;
-            let mh = monitor.size().height as i32;
-            let (nx, ny) = match position.as_str() {
-                "top" => ((mw - new_width as i32) / 2, 0),
-                "bottom" => ((mw - new_width as i32) / 2, mh - new_height as i32),
-                "left" => (0, (mh - new_height as i32) / 2),
-                "right" => (mw - new_width as i32, (mh - new_height as i32) / 2),
-                _ => ((mw - new_width as i32) / 2, mh - new_height as i32),
-            };
-            win.set_position(tauri::PhysicalPosition::new(nx, ny)).map_err(|e| e.to_string())?;
-        }
+        let (new_w, new_h, nx, ny) = match position.as_str() {
+            "left" => {
+                let w = 48i32;
+                (w, mh, 0, 0)
+            }
+            "right" => {
+                let w = 48i32;
+                (w, mh, mw - w, 0)
+            }
+            "top" => {
+                let w = 700i32.min(mw);
+                (w, height, (mw - w) / 2, 0)
+            }
+            _ => {
+                let w = 700i32.min(mw);
+                (w, height, (mw - w) / 2, mh - height)
+            }
+        };
+
+        win.set_size(tauri::PhysicalSize::new(new_w as u32, new_h as u32)).map_err(|e| e.to_string())?;
+        win.set_position(tauri::PhysicalPosition::new(nx, ny)).map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -933,6 +956,8 @@ pub async fn create_desktop(state: State<'_, AppState>, name: String) -> Result<
         widget_ids: vec![],
         window_hwnds: vec![],
     });
+    drop(mgr);
+    state.desktop_manager.lock().unwrap().save();
     Ok(())
 }
 
@@ -942,10 +967,11 @@ pub async fn delete_desktop(state: State<'_, AppState>, id: usize) -> Result<(),
     if mgr.desktops.len() <= 1 { return Err("Son masaüstü silinemez".into()); }
     if id >= mgr.desktops.len() { return Err("Geçersiz masaüstü".into()); }
     mgr.desktops.remove(id);
-    // ID'leri güncelle
     for (i, d) in mgr.desktops.iter_mut().enumerate() { d.id = i; }
     if mgr.current >= mgr.desktops.len() { mgr.current = mgr.desktops.len() - 1; }
     else if mgr.current > id { mgr.current -= 1; }
+    drop(mgr);
+    state.desktop_manager.lock().unwrap().save();
     Ok(())
 }
 
@@ -954,6 +980,8 @@ pub async fn rename_desktop(state: State<'_, AppState>, id: usize, name: String)
     let mut mgr = state.desktop_manager.lock().unwrap();
     if id < mgr.desktops.len() {
         mgr.desktops[id].name = name;
+        drop(mgr);
+        state.desktop_manager.lock().unwrap().save();
     }
     Ok(())
 }
@@ -1000,6 +1028,8 @@ pub async fn add_desktop_shortcut(state: State<'_, AppState>, desktop_id: usize,
         mgr.desktops[desktop_id].shortcuts.push(crate::virtual_desktop::Shortcut {
             name, path, icon, x, y,
         });
+        drop(mgr);
+        state.desktop_manager.lock().unwrap().save();
     }
     Ok(())
 }
@@ -1010,6 +1040,19 @@ pub async fn update_shortcut_position(state: State<'_, AppState>, desktop_id: us
     if desktop_id < mgr.desktops.len() && index < mgr.desktops[desktop_id].shortcuts.len() {
         mgr.desktops[desktop_id].shortcuts[index].x = x;
         mgr.desktops[desktop_id].shortcuts[index].y = y;
+        drop(mgr);
+        state.desktop_manager.lock().unwrap().save();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_desktop_shortcut(state: State<'_, AppState>, desktop_id: usize, index: usize) -> Result<(), String> {
+    let mut mgr = state.desktop_manager.lock().unwrap();
+    if desktop_id < mgr.desktops.len() && index < mgr.desktops[desktop_id].shortcuts.len() {
+        mgr.desktops[desktop_id].shortcuts.remove(index);
+        drop(mgr);
+        state.desktop_manager.lock().unwrap().save();
     }
     Ok(())
 }
